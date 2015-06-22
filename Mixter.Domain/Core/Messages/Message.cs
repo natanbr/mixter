@@ -48,13 +48,16 @@ namespace Mixter.Domain.Core.Messages
             if (!_projection.IsDeleted)
             {
                 var evt = new ReplyMessagePublished(MessageId.Generate(), replier, replyContent, _projection.Id);
-                eventPublisher.Publish(evt);    
+                eventPublisher.Publish(evt);
             }
         }
 
         public void Delete(IEventPublisher eventPublisher, UserId deleter)
         {
-             PublishEvent(eventPublisher, new MessageDeleted(_projection.Id));
+             if (_projection.Author.Equals(deleter))
+             {
+                 PublishEvent(eventPublisher, new MessageDeleted(_projection.Id));
+             }
         }
 
         public MessageId GetId()
@@ -66,12 +69,15 @@ namespace Mixter.Domain.Core.Messages
         {
             private readonly IList<UserId> _publishers = new List<UserId>();
 
+
             public MessageId Id { get; private set; }
 
             public IEnumerable<UserId> Publishers
             {
                 get { return _publishers; }
             }
+
+            public UserId Author { get; private set; }
 
             public bool IsDeleted { get; private set; }
 
@@ -96,6 +102,7 @@ namespace Mixter.Domain.Core.Messages
             private void When(MessagePublished evt)
             {
                 Id = evt.Id;
+                Author = evt.Author;
                 _publishers.Add(evt.Author);
             }
 
